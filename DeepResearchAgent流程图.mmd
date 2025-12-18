@@ -1,0 +1,124 @@
+graph TB
+    %% ==================== 用户输入与预处理 ====================
+    A[用户输入] --> B{输入类型检测}
+    B -->|JSON格式| C[JSON解析<br/>提取元数据/附件等]
+    B -->|普通文本| D[直接作为输入]
+    C --> E[存储元数据到上下文<br/>input_metadata]
+    D --> E
+
+    %% ==================== 意图识别与场景分类 ====================
+    E --> F[意图识别LLM<br/>intent_recognition_llm]
+    F --> G[流式解析器<br/>思考/输出分离]
+    G --> H{是否触发快速响应?}
+    H -->|是| I[直接返回标准答案<br/>StopEvent]
+    I --> END1[返回结果<br/>结束工作流]
+    H -->|否| J{判断分类模式}
+    
+    %% ==================== 场景分类机制 ====================
+    J -->|单分类| K[实体识别阶段]
+    J -->|多分类并行| K1[识别多个分类<br/>research-document、research-problem、research-planning 等]
+    K1 --> K2[创建并行工作流管理器<br/>ParallelWorkflowManager]
+    K2 --> K3{为每个分类创建}
+    K3 --> K4A[分类A独立Agent实例<br/>+独立LLM+独立上下文]
+    K3 --> K4B[分类B独立Agent实例<br/>+独立LLM+独立上下文]
+    K3 --> K4C[分类C独立Agent实例<br/>+独立LLM+独立上下文]
+    K4A --> K5[并行执行各分类工作流]
+    K4B --> K5
+    K4C --> K5
+    K5 --> K6[等待所有分类完成或超时]
+    K6 --> K7[合并各分类结果]
+    K7 --> END1
+
+    %% ==================== 实体识别阶段 ====================
+    K --> L[实体识别LLM<br/>entity_recognition_llm]
+    L --> M[流式解析器<br/>思考/输出分离]
+    M --> N[解析JSON实体列表<br/>实体名称/类型/上下文]
+    N --> O[合并识别实体到元数据<br/>_merge_entities_to_metadata]
+    O --> P[按设备类型选择工作流模板<br/>get_workflow_template_by_device_type]
+
+    %% ==================== 计划生成阶段 ====================
+    P --> Q[计划生成LLM<br/>planning_llm]
+    Q --> R[注入MCP工具描述+模板+元数据<br/>基于category过滤工具白名单]
+    R --> S[流式计划生成]
+    S --> T[保存current_plan到上下文]
+
+    %% ==================== ReAct推理循环核心 ====================
+    T --> U[准备聊天历史<br/>prepare_chat_history]
+    U --> V[格式化LLM输入<br/>系统提示+历史+推理+元数据+过滤后工具]
+    V --> W[ReAct推理LLM<br/>主LLM实例]
+    W --> X[流式解析器<br/>思考/行动分离]
+    X --> Y{解析推理步骤}
+
+    %% ==================== 推理步骤分支 ====================
+    Y -->|工具调用 Action| Z[提取工具名称和参数]
+    Y -->|里程碑 Milestone| Z1[状态更新<br/>继续推理循环]
+    Y -->|完成 Final| Z2[最终答案生成]
+    Y -->|解析错误| Z3[错误处理<br/>添加错误观察]
+
+    %% ==================== 工具调用处理（MCP协议） ====================
+    Z --> AA[MCP客户端连接检查<br/>ensure_connected]
+    AA --> AB[发送MCP工具调用请求<br/>call_tool via stdio]
+    AB --> AC{工具类型特殊处理}
+    
+    %% ==================== 混合检索工具处理 ====================
+    AC -->|search_documents| AD[ES混合检索模式<br/>_es_full_text_search]
+    AD --> AD1[生成查询向量 1024维]
+    AD1 --> AD2[并行执行检索]
+    AD2 --> AD3[向量检索kNN<br/>召回Top-50候选<br/>cosine相似度]
+    AD2 --> AD4[全文检索BM25<br/>召回Top-50候选<br/>布尔查询+must_not过滤]
+    AD3 --> AD5[手动RRF融合算法<br/>_manual_rrf_fusion]
+    AD4 --> AD5
+    AD5 --> AD6[计算RRF分数score]
+    AD6 --> AD7[返回Top-15融合结果<br/>包含vector_rank+text_rank]
+    AD7 --> AD8[多线程并行过滤<br/>_filter_chunks_parallel]
+    AD8 --> AD9[每批3个chunk<br/>最多3个线程<br/>filter_llm判断相关性]
+    AD9 --> AD10[缓存relevant_doc_chunks<br/>追加到sources]
+    
+    %% ==================== 其他工具处理 ====================
+    AC -->|conclude_document_chunks| AE[注入缓存doc_chunks<br/>conclusion_llm生成结论]
+    AC -->|其他MCP工具| AI[标准MCP调用]
+     
+    AE --> AJ[标准结果处理]
+    AI --> AJ
+    AD10 --> AJ
+
+    %% ==================== 观察结果处理与循环 ====================
+    AJ --> AK[添加ObservationReasoningStep<br/>工具观察结果]
+    AK --> AL[更新推理历史<br/>current_reasoning]
+    AL --> AM[工作流策略回调<br/>on_tool_call_complete]
+    AM --> U
+    Z1 --> U
+    Z3 --> U
+
+    %% ==================== 最终结果生成 ====================
+    Z2 --> AN[构建最终响应]
+    AN --> AO[包含答案+来源+推理历史]
+    AO --> AP[StopEvent触发]
+    AP --> END2[返回完整结果<br/>结束工作流]
+
+    %% ==================== 样式定义 ====================
+    classDef inputProcessing fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef intentRecognition fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef parallelWorkflow fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef entityRecognition fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef planning fill:#dcedc8,stroke:#689f38,stroke-width:2px
+    classDef reactCore fill:#bbdefb,stroke:#1565c0,stroke-width:2px
+    classDef toolCall fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px
+    classDef hybridSearch fill:#ffccbc,stroke:#d84315,stroke-width:3px
+    classDef streaming fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px
+    classDef errorHandling fill:#ffcdd2,stroke:#c62828,stroke-width:2px
+    classDef finalResult fill:#c5e1a5,stroke:#558b2f,stroke-width:2px
+
+    %% ==================== 应用样式 ====================
+    class A,B,C,D,E inputProcessing
+    class F,G,H,I,J intentRecognition
+    class K1,K2,K3,K4A,K4B,K4C,K5,K6,K7 parallelWorkflow
+    class K,L,M,N,O entityRecognition
+    class P,Q,R,S,T planning
+    class U,V,W,X,Y,Z1,Z3 reactCore
+    class Z,AA,AB,AC,AJ,AK,AL,AM toolCall
+    class AD,AD1,AD2,AD3,AD4,AD5,AD6,AD7,AD8,AD9,AD10 hybridSearch
+    class AE,AI toolCall
+    class G,M,S,X streaming
+    class Z3 errorHandling
+    class Z2,AN,AO,AP,END1,END2 finalResult

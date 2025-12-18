@@ -1,0 +1,11 @@
+dirtyjson==1.0.8
+fastapi==0.115.12
+llama-index==0.12.37
+llama-index-vector-stores-postgres==0.5.4
+psycopg2_binary==2.9.10
+pydantic==2.11.5
+pydantic_core==2.33.2
+Requests==2.32.2
+SQLAlchemy==2.0.41
+tqdm==4.67.1
+mcp[cli]==1.10.1

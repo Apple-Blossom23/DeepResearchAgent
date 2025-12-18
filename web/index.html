@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Research Agent - 智能研究助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-brain"></i>
+                    <h1>Deep Research Agent</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="settingsBtn">
+                        <i class="fas fa-cog"></i>
+                        设置
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <div class="input-section">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="researchInput" 
+                            placeholder="请输入您想要研究的问题或主题..."
+                            rows="3"
+                        ></textarea>
+                        <button class="btn-primary" id="startResearchBtn">
+                            <i class="fas fa-search"></i>
+                            开始研究
+                        </button>
+                        <button class="btn-secondary" id="cancelBtn" style="display: none;">
+                            <i class="fas fa-stop"></i>
+                            停止
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research Progress -->
+            <div class="research-container" id="researchContainer" style="display: none;">
+                <!-- Progress Header -->
+                <div class="progress-header">
+                    <div class="progress-info">
+                        <h3 id="researchTitle">研究进行中...</h3>
+                    </div>
+                </div>
+
+                <!-- Research Plan Section -->
+                <div class="research-plan-section">
+                    <div class="panel-header">
+                        <h4><i class="fas fa-list-ul"></i> 研究计划</h4>
+                    </div>
+                    
+                    <!-- Progress Steps - Horizontal Layout -->
+                    <div class="progress-steps-horizontal">
+                        <div class="step" data-step="intent">
+                            <div class="step-icon">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div class="step-content">
+                                <div class="step-title">意图识别</div>
+                                <div class="step-status">等待中...</div>
+                            </div>
+                        </div>
+                        <div class="step" data-step="entity">
+                            <div class="step-icon">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="step-content">
+                                <div class="step-title">实体识别</div>
+                                <div class="step-status">等待中...</div>
+                            </div>
+                        </div>
+                        <div class="step" data-step="planning">
+                            <div class="step-icon">
+                                <i class="fas fa-list-ul"></i>
+                            </div>
+                            <div class="step-content">
+                                <div class="step-title">计划生成</div>
+                                <div class="step-status">等待中...</div>
+                            </div>
+                        </div>
+                        <div class="step" data-step="conclusion">
+                            <div class="step-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="step-content">
+                                <div class="step-title">生成报告</div>
+                                <div class="step-status">等待中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="research-layout-new">
+                    <!-- Left Panel: Intent & Entity Recognition -->
+                    <div class="left-panel-new">
+                        <!-- Intent Recognition Section -->
+                        <div class="recognition-section">
+                            <div class="section-header">
+                                <h5><i class="fas fa-brain"></i> 意图识别</h5>
+                                <button class="btn-icon intent-toggle" id="intentToggle">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                            </div>
+                            <div class="recognition-content" id="intentContent">
+                                <div class="recognition-placeholder">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <p>等待意图识别...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Entity Recognition Section -->
+                        <div class="recognition-section">
+                            <div class="section-header">
+                                <h5><i class="fas fa-tags"></i> 实体识别</h5>
+                                <button class="btn-icon entity-toggle" id="entityToggle">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                            </div>
+                            <div class="recognition-content" id="entityContent">
+                                <div class="recognition-placeholder">
+                                    <i class="fas fa-hourglass-half"></i>
+                                    <p>等待实体识别...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Execution Details -->
+                    <div class="right-panel-new">
+                        <div class="panel-header">
+                            <h4><i class="fas fa-cogs"></i> 执行详情</h4>
+                            <div class="panel-controls">
+                                <button class="btn-icon" id="clearOutputBtn" title="清空输出">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="btn-icon" id="scrollToBottomBtn" title="滚动到底部">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Category Tabs Navigation -->
+                        <div class="category-tabs">
+                            <div class="tab-nav">
+                                <button class="tab-btn" data-category="research-general" id="stabilityTab">
+                                    <i class="fas fa-shield-alt"></i> 通用
+                                </button>
+                                <button class="tab-btn" data-category="research-document" id="safetyTab">
+                                    <i class="fas fa-exclamation-triangle"></i> 文档
+                                </button>
+                                <button class="tab-btn" data-category="research-problem" id="regulationTab">
+                                    <i class="fas fa-cogs"></i> 问题
+                                </button>
+                                <button class="tab-btn" data-category="research-planning" id="recoveryTab">
+                                    <i class="fas fa-sync-alt"></i> 规划
+                                </button>
+                                <button class="tab-btn" data-category="research-decision" id="planTab">
+                                    <i class="fas fa-file-alt"></i> 决策
+                                </button>
+                                <button class="tab-btn" data-category="technical-troubleshooting" id="faultTab">
+                                    <i class="fas fa-wrench"></i> 排障
+                                </button>
+                                <button class="tab-btn" data-category="creative-design" id="islandTab">
+                                    <i class="fas fa-link-slash"></i> 创意
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Category Content Containers -->
+                        <div class="category-content">
+                            <!-- 通用分类内容 -->
+                            <div class="tab-content active" id="stabilityContent">
+                                <!-- Tool Calls Section for 通用 -->
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 通用工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="stabilityToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="stabilityToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待通用工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Output for 通用 -->
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 通用实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="stabilityOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待通用执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 文档分类内容 -->
+                            <div class="tab-content" id="safetyContent">
+                                <!-- Tool Calls Section for 文档 -->
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 文档工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="safetyToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="safetyToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待文档工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Output for 文档 -->
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 文档实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="safetyOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待文档执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 问题分类内容 -->
+                            <div class="tab-content" id="regulationContent">
+                                <!-- Tool Calls Section for 问题 -->
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 问题工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="regulationToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="regulationToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待问题工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Output for 问题 -->
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 问题实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="regulationOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待问题执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 规划分类内容 -->
+                            <div class="tab-content" id="recoveryContent">
+                                <!-- Tool Calls Section for 规划 -->
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 规划工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="recoveryToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="recoveryToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待规划工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Output for 规划 -->
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 规划实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="recoveryOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待规划执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 决策分类内容 -->
+                            <div class="tab-content" id="planContent">
+                                <!-- Tool Calls Section for 决策 -->
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 决策工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="planToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="planToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待决策工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Output for 决策 -->
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 决策实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="planOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>暂无决策相关内容</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 排障分类内容 -->
+                            <div class="tab-content" id="faultContent">
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 排障工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="faultToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="faultToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待排障工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 排障实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="faultOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待排障执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 创意分类内容 -->
+                            <div class="tab-content" id="islandContent">
+                                <div class="tool-calls-section">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-tools"></i> 创意工具调用</h5>
+                                        <button class="btn-icon tools-toggle" id="islandToolsToggle">
+                                            <i class="fas fa-chevron-up"></i>
+                                        </button>
+                                    </div>
+                                    <div class="tool-calls-content" id="islandToolCallsContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待创意工具调用...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="output-section">
+                                    <div class="output-header">
+                                        <h5><i class="fas fa-terminal"></i> 创意实时输出</h5>
+                                    </div>
+                                    <div class="output-content" id="islandOutputContent">
+                                        <div class="category-placeholder">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <p>等待创意执行输出...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h3>研究结果</h3>
+                    <div class="results-actions">
+                        <button class="btn-secondary" id="exportBtn">
+                            <i class="fas fa-download"></i>
+                            导出结果
+                        </button>
+                        <button class="btn-secondary" id="newResearchBtn">
+                            <i class="fas fa-plus"></i>
+                            新研究
+                        </button>
+                    </div>
+                </div>
+                <div class="results-content" id="resultsContent">
+                    <!-- 最终结果将在这里显示 -->
+                </div>
+            </div>
+        </main>
+
+        <!-- User Interaction Modal -->
+        <div class="modal" id="interactionModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>需要您的确认</h3>
+                    <button class="modal-close" id="modalCloseBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="interaction-message" id="interactionMessage">
+                        <!-- 交互消息内容 -->
+                    </div>
+                    <div class="interaction-plan" id="interactionPlan" style="display: none;">
+                        <!-- 计划内容 -->
+                    </div>
+                    <div class="interaction-input">
+                        <textarea 
+                            id="userResponseInput" 
+                            placeholder="请输入您的回复..."
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="cancelInteractionBtn">取消</button>
+                    <button class="btn-primary" id="confirmInteractionBtn">确认</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal" id="settingsModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>设置</h3>
+                    <button class="modal-close" id="settingsModalCloseBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="apiUrl">API地址</label>
+                        <input type="text" id="apiUrl" value="http://127.0.0.1:8989" />
+                    </div>
+                    <div class="setting-group">
+                        <label for="apiKey">API密钥</label>
+                        <input type="password" id="apiKey" value="" />
+                    </div>
+                    <div class="setting-group">
+                        <label for="autoScroll">自动滚动</label>
+                        <input type="checkbox" id="autoScroll" checked />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="resetSettingsBtn">重置</button>
+                    <button class="btn-primary" id="saveSettingsBtn">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <div class="loading-text">连接中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
