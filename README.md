@@ -397,7 +397,7 @@ async def generate_conclusion(doc_chunks, query):
 
 ### 环境要求
 
-- Python 3.8+
+- Python 3.10+
 - PostgreSQL (推荐 13+)
 - Elasticsearch 7.0+
 - Redis (可选，用于缓存)
@@ -419,7 +419,7 @@ python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
 
 # 或使用 conda
-conda create -n deep_research python=3.8
+conda create -n deep_research python=3.10
 conda activate deep_research
 ```
 
